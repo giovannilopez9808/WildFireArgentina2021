@@ -1,4 +1,4 @@
-Date,PM10,Gravimetric Method,Optical Method mean,Optical Method std
+Date,PM10,Gravimetric_Method,Optical_Method_mean,Optical_Method_std
 02/01/2021,0.78,32,34,14
 12/01/2021,0.35,15,17,9
 26/02/2021,1.84,76,85,25

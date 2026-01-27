@@ -1,7 +1,10 @@
 from functools import reduce
-from operator import  and_
+from operator import and_
 from os.path import join
-from typing import Set
+from typing import (
+    List,
+    Set,
+)
 from pandas import (
     Timestamp,
     to_datetime,
@@ -11,9 +14,10 @@ from pandas import (
 )
 
 
-class DavisData:
+class _DavisBaseData:
     def __init__(
         self,
+        columns: List[str],
     ) -> None:
         self.folder = join(
             "..",
@@ -63,7 +67,7 @@ class DavisData:
                 limits=[166, 188],
                 direction=270,
             ),
-            SSO=dict(
+            SSW=dict(
                 limits=[188, 210],
                 direction=247.5,
             ),
@@ -87,15 +91,35 @@ class DavisData:
                 limits=[298, 320],
                 direction=135
             ),
-        NNW=dict(
-            limits=[320, 342],
-            direction=112.5,
-        ),
-        N=dict(
-            limits=[342, 34],
-            direction=90,
-        ),
+            NNW=dict(
+                limits=[320, 342],
+                direction=112.5,
+            ),
+            N=dict(
+                limits=[342, 34],
+                direction=90,
+            ),
         )
+        self.columns = columns
+        # self.columns += [
+        # "obsTimeLocal"
+        # ]
+
+    @staticmethod
+    def _get_wind_direction_numeric(
+        value: float,
+        wind_dictionary: dict,
+    ) -> str:
+        wind_dictionary = list(
+            wind_dictionary.items()
+        )
+        for name, params in wind_dictionary[:-1]:
+            direction = params["direction"]
+            limits = params["limits"]
+            is_in_limit = value >= limits[0] and value <= limits[-1]
+            if is_in_limit:
+                return direction
+        return 90
 
     @staticmethod
     def _get_wind_direction(
@@ -123,13 +147,19 @@ class DavisData:
                 self.wind_dictionary,
             )
         )
+        data["winddirNum"] = data["winddirAvg"].apply(
+            lambda value:
+            self._get_wind_direction_numeric(
+                value,
+                self.wind_dictionary,
+            )
+        )
         return data
-
 
     @staticmethod
     def _get_dates(
-        data:DataFrame,
-    )->Set[Timestamp]:
+        data: DataFrame,
+    ) -> Set[Timestamp]:
         dates = set(
             data.index.date
         )
@@ -137,14 +167,14 @@ class DavisData:
 
     @staticmethod
     def _get_condition(
-        data:DataFrame,
-        dates:Set[Timestamp],
-    )->DataFrame:
+        data: DataFrame,
+        dates: Set[Timestamp],
+    ) -> DataFrame:
         conditions = list(
             data.index.date != date
             for date in dates
         )
-        if len(conditions)>0:
+        if len(conditions) > 0:
             condition = reduce(
                 and_,
                 conditions,
@@ -154,13 +184,12 @@ class DavisData:
             ]
         return data
 
-
     def read(
         self,
-    )->DataFrame:
+    ) -> DataFrame:
         data = list()
         dates = set()
-        for file,_ in self.files.items():
+        for file, _ in self.files.items():
             file = f"{file}.csv"
             file = join(
                 self.folder,
@@ -171,6 +200,10 @@ class DavisData:
                 index_col="obsTimeLocal",
                 parse_dates=True,
             )
+            _data = _data[
+                self.columns
+            ]
+            _data = _data.dropna()
             _dates = self._get_dates(
                 _data,
             )
@@ -187,9 +220,74 @@ class DavisData:
         data = concat(
             data,
         )
-        data = self._fill_wind_direction(
-            data,
-        )
+        if "winddirAvg" in self.columns:
+            data = self._fill_wind_direction(
+                data,
+            )
         return data
 
 
+class _DavisWindData(
+    _DavisBaseData
+):
+    def __init__(
+        self,
+    ) -> None:
+        super().__init__(
+            columns=[
+                "winddirAvg",
+                "windspeedAvg",
+            ],
+        )
+
+
+class _DavisMeteorologicalData(
+    _DavisBaseData
+):
+    def __init__(
+        self,
+    ) -> None:
+        super().__init__(
+            columns=[
+                'humidityAvg',
+                'tempAvg',
+                'pressureMax',
+                'pressureMin',
+                'precipTotal',
+            ],
+        )
+
+
+class DavisData:
+    def __init__(
+        self,
+    ) -> None:
+        pass
+
+    @staticmethod
+    def _get_meteorological_data(
+    ) -> DataFrame:
+        dataset = _DavisMeteorologicalData()
+        data = dataset.read()
+        return data
+
+    @staticmethod
+    def _get_wind_data(
+    ) -> DataFrame:
+        dataset = _DavisWindData()
+        data = dataset.read()
+        return data
+
+    def read(
+        self,
+    ) -> DataFrame:
+        meteorological_data = self._get_meteorological_data()
+        wind_data = self._get_wind_data()
+        data = concat(
+            [
+                meteorological_data,
+                wind_data,
+            ],
+            axis=1,
+        )
+        return data

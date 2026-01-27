@@ -2,15 +2,17 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from pandas.tseries.offsets import Hour
 from modules.DavisData import DavisData
 from matplotlib import pyplot
+from os.path import join
 from pandas import (
     to_timedelta,
     to_datetime,
+    read_csv,
 )
 
 
 dataset = DavisData()
+exit(1)
 data = dataset.read()
-print(data.columns)
 data = data[[
     "windspeedAvg"
 ]]

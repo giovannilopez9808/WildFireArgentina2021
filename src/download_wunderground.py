@@ -3,6 +3,7 @@ from os.path import join
 from tqdm import tqdm
 from os import getenv
 from pandas import (
+    date_range,
     DataFrame,
     read_csv,
     concat,
@@ -11,9 +12,9 @@ import requests
 
 
 load_dotenv()
-# stationid="ISANTAFE117"
-# stationid="IROSAR70"
-stationid="IROSAR56"
+# stationid = "ISANTAFE117"
+# stationid = "IROSAR70"
+stationid = "IROSAR56"
 general_endpoint = getenv(
     "endpoint_wunderground"
 )
@@ -29,9 +30,14 @@ measurements = read_csv(
     parse_dates=True,
     date_format="%d/%m/%Y",
 )
+dates = date_range(
+    "2021-01-01",
+    "2021-12-31",
+    freq="D",
+)
 data = list()
 for index in tqdm(
-    measurements.index
+    dates,
 ):
     date = index.strftime(
         "%Y%m%d"
@@ -58,7 +64,7 @@ for index in tqdm(
     _data = DataFrame(
         response,
     )
-    if _data.size>0:
+    if _data.size > 0:
         data.append(
             _data,
         )
