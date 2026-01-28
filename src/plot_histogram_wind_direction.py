@@ -1,13 +1,17 @@
+from pandas.core.window import rolling
 from modules.DavisData import DavisData
 from matplotlib import pyplot
 from numpy import linspace
 from os.path import join
-from numpy import pi
 from pandas import (
     date_range,
-    to_datetime,
     DataFrame,
     read_csv,
+)
+from numpy import (
+    linspace,
+    round,
+    pi,
 )
 
 
@@ -23,9 +27,6 @@ propietary = read_csv(
     parse_dates=True,
     index_col=0,
 )
-# propietary = propietary[
-# propietary["Gravimetric Method"] >= 45
-# ]
 dataset = DavisData()
 data = dataset.read()
 dates = date_range(
@@ -33,13 +34,39 @@ dates = date_range(
     "2021-12-31",
     freq="D",
 )
+degrees_str = list(
+    dataset.wind_dictionary.keys()
+)
+degrees = list(
+    dictionary["direction"]
+    for dictionary in dataset.wind_dictionary.values()
+)
+ticks = list(
+    zip(
+        degrees,
+        degrees_str,
+    )
+)
+ticks = sorted(
+    ticks,
+    key=lambda value: value[0]
+)
+degrees = list(
+    values[0]*pi/180
+    for values in ticks
+)
+degrees_str = list(
+    values[-1]
+    for values in ticks
+)
 for date in dates:
     daily_data = data[
         data.index.date == date.date()
     ]
     fig, ax = pyplot.subplots(
         figsize=(
-            10, 10
+            11,
+            11,
         ),
         subplot_kw=dict(
             projection='polar'
@@ -65,33 +92,48 @@ for date in dates:
         count = _data["winddirNum"].count()
         results.loc[inf+180] = count
     bins = bins[:-1]
-    ax.bar(
+    max_number = results["Count"].max()
+    max_number = (max_number//10)*10
+    yticks = linspace(
+        10,
+        max_number,
+        4,
+    )
+    yticks = round(
+        yticks,
+    )
+    bars = ax.bar(
         (bins+180)*pi/180,
         results["Count"],
-        # align="edge",
         color="#FFB700",
         width=0.3,
     )
-# ax.set_ylim(
-# 0,
-# 30,
-# )
-# ax.set_yticks(
-# range(
-# 0,
-# 30,
-# 5,
-# )
-# )
     ax.set_xticks(
-        (bins+180)*pi/180,
+        degrees,
     )
     ax.set_xticklabels(
-        dataset.wind_dictionary.keys()
+        degrees_str,
+    )
+    ax.set_yticks(
+        yticks,
+    )
+    ax.set_ylim(
+        0,
+        max_number+20,
     )
     ax.tick_params(
         labelsize=25,
         pad=30,
+    )
+    ax.tick_params(
+        axis="y",
+        labelsize=23,
+    )
+    ax.set_title(
+        date.strftime(
+            "%Y-%m-%d"
+        ),
+        fontsize=26,
     )
     fig.tight_layout(
         pad=4,
@@ -109,4 +151,3 @@ for date in dates:
         filename,
     )
     pyplot.close()
-    exit(1)

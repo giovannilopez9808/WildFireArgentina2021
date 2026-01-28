@@ -39,6 +39,10 @@ class _DavisBaseData:
             ),
         )
         self.wind_dictionary = dict(
+            NNE=dict(
+                limits=[12, 34],
+                direction=67.5,
+            ),
             NE=dict(
                 limits=[34, 56],
                 direction=45,
@@ -262,13 +266,14 @@ class DavisData:
     def __init__(
         self,
     ) -> None:
-        pass
+        self.wind_dictionary: dict = None
 
-    @staticmethod
     def _get_meteorological_data(
+        self,
     ) -> DataFrame:
         dataset = _DavisMeteorologicalData()
         data = dataset.read()
+        self.wind_dictionary = dataset.wind_dictionary
         return data
 
     @staticmethod

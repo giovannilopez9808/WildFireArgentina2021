@@ -1,14 +1,12 @@
 from modules.DavisData import DavisData
 from os.path import join
 from pandas import (
+    to_datetime,
     DataFrame,
     read_csv,
     concat,
     merge,
-    set_option,
-    to_datetime,
 )
-set_option('display.max_colwidth', None)
 
 
 def get_values_in_str(
@@ -50,6 +48,10 @@ params = dict(
         "pressureMax",
     ],
     final_columns=dict(
+        PM10=dict(
+            name="PM10",
+            has_std=False,
+        ),
         NI=dict(
             name="Fire",
             has_std=False,
@@ -77,6 +79,31 @@ params = dict(
     ),
 )
 
+
+filename = join(
+    "..",
+    "data",
+    "propietary",
+    "data.csv"
+)
+propietary = read_csv(
+    filename,
+    date_format="%d/%m/%Y",
+    parse_dates=True,
+    index_col=0,
+)
+propietary = propietary[[
+    "Gravimetric_Method"
+]]
+propietary.columns = [
+    "PM10",
+]
+propietary.index = list(
+    date.strftime(
+        "%Y-%m-%d"
+    )
+    for date in propietary.index
+)
 dataset = DavisData()
 data = dataset.read()
 _data = data[
@@ -125,6 +152,18 @@ daily_data.index = list(
     for date in daily_data.index
 )
 daily_data = daily_data.round(1)
+daily_data = concat(
+    [
+        propietary,
+        daily_data,
+    ],
+    axis=1,
+)
+daily_data = daily_data.dropna(
+    subset=[
+        "PM10",
+    ],
+)
 _data = data[[
     "winddirStr"
 ]]
@@ -133,11 +172,6 @@ _data["date"] = list(
         "%Y-%m-%d"
     )
     for date in _data.index
-)
-print(
-    _data[
-        _data["date"] == "2021-02-26"
-    ]
 )
 _data = _data.groupby(
     [
@@ -153,8 +187,6 @@ _data = _data.sort_values(
     ],
     ascending=False,
 )
-exit(1)
-# print(_data)
 _data = _data.loc[
     _data.groupby(
         "date"
@@ -203,6 +235,18 @@ daily_data = get_values_in_str(
     params,
 )
 daily_data = daily_data.sort_index()
+columns = list(
+    values["name"]
+    for values in params["final_columns"].values()
+)
+daily_data = daily_data[
+    columns
+]
+daily_data = daily_data.dropna(
+    subset=[
+        "PM10",
+    ],
+)
 filename = join(
     "..",
     "result",
