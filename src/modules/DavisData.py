@@ -120,7 +120,7 @@ class _DavisBaseData:
         for name, params in wind_dictionary[:-1]:
             direction = params["direction"]
             limits = params["limits"]
-            is_in_limit = value >= limits[0] and value <= limits[-1]
+            is_in_limit = value >= limits[0] and value < limits[-1]
             if is_in_limit:
                 return direction
         return 90
@@ -135,7 +135,7 @@ class _DavisBaseData:
         )
         for name, params in wind_dictionary[:-1]:
             limits = params["limits"]
-            is_in_limit = value >= limits[0] and value <= limits[-1]
+            is_in_limit = value >= limits[0] and value < limits[-1]
             if is_in_limit:
                 return name
         return "N"
@@ -227,6 +227,13 @@ class _DavisBaseData:
         if "winddirAvg" in self.columns:
             data = self._fill_wind_direction(
                 data,
+            )
+            print(
+                data[
+                    data.index.date == to_datetime(
+                        "2021-06-22"
+                    ).date()
+                ]
             )
         return data
 

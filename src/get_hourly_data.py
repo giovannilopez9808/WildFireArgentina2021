@@ -125,6 +125,17 @@ _data["tempAvg"] = _data["tempAvg"].apply(
     lambda value:
     (value-32)/1.8,
 )
+_data["windspeedAvg"] = _data["windspeedAvg"].apply(
+    lambda value:
+    value*1.60934,
+)
+data = _data[
+    _data.index.date == to_datetime(
+        "2021-08-01"
+    ).date()
+]
+data.to_csv("test.csv")
+exit(1)
 daily_mean = _data.resample(
     "D"
 ).mean()
@@ -186,6 +197,11 @@ _data = _data.sort_values(
         0,
     ],
     ascending=False,
+)
+print(
+    _data[
+        _data["date"] == "2021-06-22"
+    ]
 )
 _data = _data.loc[
     _data.groupby(

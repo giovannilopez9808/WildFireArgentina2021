@@ -1,4 +1,4 @@
-from pandas.core.window import rolling
+import matplotlib.patheffects as PathEffects
 from modules.DavisData import DavisData
 from matplotlib import pyplot
 from numpy import linspace
@@ -7,6 +7,7 @@ from pandas import (
     date_range,
     DataFrame,
     read_csv,
+    to_datetime,
 )
 from numpy import (
     linspace,
@@ -60,6 +61,9 @@ degrees_str = list(
     for values in ticks
 )
 for date in dates:
+    # date = to_datetime(
+    # "2021-10-29"
+    # )
     daily_data = data[
         data.index.date == date.date()
     ]
@@ -108,32 +112,61 @@ for date in dates:
         color="#FFB700",
         width=0.3,
     )
+    for spine in ax.spines.values():
+        spine.set_edgecolor('white')
+        spine.set_linewidth(3)
     ax.set_xticks(
         degrees,
     )
-    ax.set_xticklabels(
+    ticks = ax.set_xticklabels(
         degrees_str,
+        weight="bold",
+        color="white",
+    )
+    list(
+        tick.set_path_effects(
+            [
+                PathEffects.withStroke(
+                    foreground='black',
+                    linewidth=5,
+                )
+            ]
+        )
+        for tick in ticks
     )
     ax.set_yticks(
         yticks,
     )
+    ax.set_yticklabels(
+        list(
+            int(ytick)
+            for ytick in yticks
+        ),
+        weight="bold",
+    )
     ax.set_ylim(
         0,
-        max_number+20,
+        max_number*1.25,
+    )
+    ax.tick_params(
+        labelsize=27,
+        axis="x",
+        pad=32,
     )
     ax.tick_params(
         labelsize=25,
-        pad=30,
-    )
-    ax.tick_params(
         axis="y",
-        labelsize=23,
     )
-    ax.set_title(
-        date.strftime(
-            "%Y-%m-%d"
-        ),
-        fontsize=26,
+    # ax.set_xlabel(
+    # date.strftime(
+    # "%Y-%m-%d"
+    # ),
+    # weight="bold",
+    # fontsize=26,
+    # )
+    ax.grid(
+        color="#ffffff",
+        lw=3,
     )
     fig.tight_layout(
         pad=4,
@@ -149,5 +182,6 @@ for date in dates:
     )
     pyplot.savefig(
         filename,
+        transparent=True,
     )
     pyplot.close()
